@@ -15,6 +15,7 @@ from PIL import Image, ImageDraw
 from pathlib import Path
 import numpy as np
 from mfgdata import processpdfwithprompt, extractmfgresults
+import datetime
 
 # Load .env file
 load_dotenv()

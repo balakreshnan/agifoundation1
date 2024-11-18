@@ -7,3 +7,5 @@ pandas
 promptflow[azure]
 qrcode[pil]
 azure-search-documents==11.6.0b4
+streamlit
+PyPDF2
