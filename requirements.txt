@@ -9,3 +9,9 @@ qrcode[pil]
 azure-search-documents==11.6.0b4
 streamlit
 PyPDF2
+autogen-core==0.4.0.dev6
+autogen-agentchat==0.4.0.dev6
+autogen-ext==0.4.0.dev6
+azure-ai-projects
+azure-monitor-opentelemetry
+ag2

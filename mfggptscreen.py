@@ -29,22 +29,33 @@ def fetch_source_content(file_name):
         return read_pdf_file(file_path)
     return "Unsupported file format."
 
+# Initialize chat history in session state
+if "chat_history" not in st.session_state:
+    st.session_state.chat_history = []
+
+
 # Streamlit App
 def main():
-    st.title("LLM Chat with Citations")
+    st.header("Manufacturing GPT - Compliance and Cybersecurity, OSHA Knowledge Agent")
 
     
     if prompt := st.chat_input("what are the personal protection i should consider in manufacturing?", key="chat1"):
         # Call the extractproductinfo function
         #st.write("Searching for the query: ", prompt)
         st.chat_message("user").markdown(prompt, unsafe_allow_html=True)
+        st.session_state.chat_history.append({"role": "user", "message": prompt})
         starttime = datetime.datetime.now()
         rfttopics = extractmfgresults(prompt)
         endtime = datetime.datetime.now()
 
         #st.markdown(f"Time taken to process: {endtime - starttime}", unsafe_allow_html=True)
         rfttopics += f"\n Time taken to process: {endtime - starttime}"
+        st.session_state.chat_history.append({"role": "assistant", "message": rfttopics})
         st.chat_message("assistant").markdown(rfttopics, unsafe_allow_html=True)
+
+        # Keep only the last 10 messages
+        if len(st.session_state.chat_history) > 20:  # 10 user + 10 assistant
+            st.session_state.chat_history = st.session_state.chat_history[-20:]
 
 if __name__ == "__main__":
     main()

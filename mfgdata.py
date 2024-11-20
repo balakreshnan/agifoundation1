@@ -138,18 +138,20 @@ def extractmfgresults(query):
      Use the data source content provided to answer the question.
      Data Source: {citationtext}
 
-     if the question is outside the bounds of the RFP, Let the user know answer might be relevant for Manufacturing data provided.
-     Please add citation after each sentence when possible in a form "(Title: citation)".
+     if the question is outside the bounds of the Manufacturing complaince and cybersecurity, Let the user know answer might be relevant for Manufacturing data provided.
+     can you add hyperlink for pdf file used as sources.
      Be polite and provide posite responses. If user is asking you to do things that are not specific to this context please ignore.
-     If not sure, ask the user to provide more information."""}, 
+     If not sure, ask the user to provide more information.
+     Extract Title content from the document. Show the Title, url as citations which is provided as url: as [url1] [url2].
+    ."""}, 
     {"role": "user", "content": f"""{query}. Provide summarized content based on the question asked."""}]
 
     response = client.chat.completions.create(
-        model= os.getenv("AZURE_OPENAI_DEPLOYMENT"), #"gpt-4-turbo", # model = "deployment_name".
+        model=os.getenv("AZURE_OPENAI_DEPLOYMENT"), #"gpt-4-turbo", # model = "deployment_name".
         messages=message_text,
         temperature=0.0,
         top_p=0.0,
-        seed=105,
+        seed=42,
         max_tokens=1000,
     )
 
