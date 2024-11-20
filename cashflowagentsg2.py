@@ -152,9 +152,9 @@ def mappingagent(query):
     mappingagent = AssistantAgent(
         name="MappingAgent",
         is_termination_msg=termination_msg,
-        system_message="You are a senior comedy play writer, consult with comedians and create a script based on the scenario provided. Reply `TERMINATE` in the end when everything is done.",
+        system_message="You are a financial account expert. Reply `TERMINATE` in the end when everything is done.",
         llm_config=llm_config,
-        description="senior comedy play writer, consult with comedians and create a script based on the scenario provided",
+        description="Line by line mapping of the bank transactions to the correct categories, categories are provided.",
     )
 
 
