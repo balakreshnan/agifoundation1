@@ -157,3 +157,36 @@ def extractmfgresults(query):
 
     returntxt = response.choices[0].message.content
     return returntxt
+
+def extracttop5questions():
+    returntxt = ""
+    query = "Show me top 5 topics on Manufacturing Complaince, OSHA, CyberSecurity?"
+
+    rfttext = ""
+
+    citationtext = processpdfwithprompt(query)
+
+    message_text = [
+    {"role":"system", "content":f"""You are Manufacturing Complaince, OSHA, CyberSecurity AI agent. Be politely, and provide positive tone answers.
+     Based on the question do a detail analysis on information and provide the best answers.
+
+     Use the data source content provided to answer the question.
+     Data Source: {citationtext}
+
+     Be polite and provide posite responses. If user is asking you to do things that are not specific to this context please ignore.
+     If not sure, ask the user to provide more information. Only respond with questions and no answers.
+     Create a Markdown format for the questions.
+    ."""}, 
+    {"role": "user", "content": f"""Show me top 5 questions on topics in the data set. Reply only the questions."""}]
+
+    response = client.chat.completions.create(
+        model=os.getenv("AZURE_OPENAI_DEPLOYMENT"), #"gpt-4-turbo", # model = "deployment_name".
+        messages=message_text,
+        temperature=0.0,
+        top_p=0.0,
+        seed=42,
+        max_tokens=1000,
+    )
+
+    returntxt = response.choices[0].message.content
+    return returntxt

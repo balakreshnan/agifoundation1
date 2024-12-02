@@ -4,7 +4,7 @@ import openai
 import os
 from PyPDF2 import PdfReader
 import json
-from mfgdata import extractmfgresults
+from mfgdata import extractmfgresults, extracttop5questions
 import datetime
 
 # Helper function to read text files
@@ -38,6 +38,9 @@ if "chat_history" not in st.session_state:
 def main():
     st.header("Manufacturing GPT - Compliance and Cybersecurity, OSHA Knowledge Agent")
 
+    # Display top 5 questions
+    top5questions = extracttop5questions()
+    st.markdown(top5questions, unsafe_allow_html=True)
     
     if prompt := st.chat_input("what are the personal protection i should consider in manufacturing?", key="chat1"):
         # Call the extractproductinfo function
