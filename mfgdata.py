@@ -177,7 +177,7 @@ def extracttop5questions():
      If not sure, ask the user to provide more information. Only respond with questions and no answers.
      Create a Markdown format for the questions.
     ."""}, 
-    {"role": "user", "content": f"""Show me top 5 questions on topics in the data set. Reply only the questions."""}]
+    {"role": "user", "content": f"""Show me top 5 questions on topics in the data set, make sure we cover all topics available in Manufacturing Complaince, OSHA, CyberSecurity, Personal Protection Equipment. Reply only the questions."""}]
 
     response = client.chat.completions.create(
         model=os.getenv("AZURE_OPENAI_DEPLOYMENT"), #"gpt-4-turbo", # model = "deployment_name".
