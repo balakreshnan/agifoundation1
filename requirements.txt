@@ -15,3 +15,6 @@ autogen-ext
 azure-ai-projects
 azure-monitor-opentelemetry
 ag2
+azure-ai-inference
+azure-monitor-opentelemetry 
+opentelemetry-instrumentation-openai-v2
