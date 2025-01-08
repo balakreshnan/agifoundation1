@@ -104,6 +104,7 @@ async def mfg_response(query):
         1. <agent> : <task>
 
         After all tasks are complete, summarize the findings and end with "TERMINATE".
+        Extract Title content from the document. Show the Title, url as citations which is provided as url: as [url1] [url2].
         """,
     )
 
@@ -122,12 +123,13 @@ async def mfg_response(query):
 
     mfg_ind_analyst_agent = AssistantAgent(
         "DataAnalystAgent",
-        description="A RFP agent. pull information from AI search.",
+        description="A Manufacturing Complaince, OSHA, CyberSecurity AI agent. Data source is stored in AI Search to get grounded information.",
         model_client=model_client,
         tools=[mfg_compl_data],
         system_message="""
         You are Manufacturing Complaince, OSHA, CyberSecurity AI agent. Be politely, and provide positive tone answers.
         Based on the question do a detail analysis on information and provide the best answers.
+        Extract Title content from the document. Show the Title, url as citations which is provided as url: as [url1] [url2].
         """,
     )
 
