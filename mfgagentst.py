@@ -1,3 +1,4 @@
+from collections import defaultdict
 import datetime
 from typing import Sequence
 from autogen_agentchat.agents import AssistantAgent
@@ -8,6 +9,7 @@ from autogen_agentchat.ui import Console
 from autogen_ext.models.openai import AzureOpenAIChatCompletionClient
 import asyncio
 import os
+from bs4 import BeautifulSoup
 from openai import AzureOpenAI
 from dotenv import load_dotenv
 import streamlit as st
@@ -59,19 +61,127 @@ def processimage(base64_image, imgprompt, model_name="gpt-4o-2"):
     return response.choices[0].message.content
 
 # Note: This example uses mock tools instead of real APIs for demonstration purposes
+# def search_web_tool(query: str) -> str:
+#     if "2006-2007" in query:
+#         return """Here are the total points scored by Miami Heat players in the 2006-2007 season:
+#         Udonis Haslem: 844 points
+#         Dwayne Wade: 1397 points
+#         James Posey: 550 points
+#         ...
+#         """
+#     elif "2007-2008" in query:
+#         return "The number of total rebounds for Dwayne Wade in the Miami Heat season 2007-2008 is 214."
+#     elif "2008-2009" in query:
+#         return "The number of total rebounds for Dwayne Wade in the Miami Heat season 2008-2009 is 398."
+#     return "No data found."
+
+# Function to fetch and parse the webpage
+def fetch_webpage(url):
+    try:
+        response = requests.get(url)
+        if response.status_code == 200:
+            return response.text
+        else:
+            print(f"Failed to retrieve page. Status code: {response.status_code}")
+            return None
+    except Exception as e:
+        print(f"Error fetching the webpage: {e}")
+        return None
+    
+# Function to extract content by sections and summarize
+def extract_and_summarize(content):
+    soup = BeautifulSoup(content, 'html.parser')
+    summary = defaultdict(str)
+    
+    # Extract main title and description
+    title = soup.find('h1').get_text() if soup.find('h1') else 'No Title'
+    # description = soup.find('meta', attrs={'name': 'description'})
+    description = soup.find('p').get_text() if soup.find('p') else 'No description available'
+    #description += soup.find('div').get_text() if soup.find('div') else 'No description available' 
+    # Step 3: Find the 'div' element with a specific class name
+    class_name = "newslist"  # Replace with the actual class name
+    div_content = soup.find_all('div', class_=class_name)
+    for div in div_content:
+        print(div.get_text(strip=True)) 
+        description += div.get_text(strip=True)
+    # description = description['content'] if description else 'No description available'
+    summary['Title'] = title
+    summary['Description'] = description
+    #print('description:', description)
+    
+    # Extract and summarize main body content
+    body_text = []
+    for p in soup.find_all('p'):
+        body_text.append(p.get_text())
+    
+    # Basic summarization by splitting the text into sections/topics
+    #summary['Body'] = ' '.join(body_text[:5]) + '...'
+    summary['Body'] = ' '.join(body_text[:5]) + '\n' + 'Use Accenture newsroom reports to create a table to display it in the form of Opportunity, Business Priority, Microsoft aligned solutions that can help Accenture'
+    summary['Body'] += ' can you also extract names of stake holders in the articles and their title if provided and other details.'
+
+    return summary
+
 def search_web_tool(query: str) -> str:
-    if "2006-2007" in query:
-        return """Here are the total points scored by Miami Heat players in the 2006-2007 season:
-        Udonis Haslem: 844 points
-        Dwayne Wade: 1397 points
-        James Posey: 550 points
-        ...
-        """
-    elif "2007-2008" in query:
-        return "The number of total rebounds for Dwayne Wade in the Miami Heat season 2007-2008 is 214."
-    elif "2008-2009" in query:
-        return "The number of total rebounds for Dwayne Wade in the Miami Heat season 2008-2009 is 398."
-    return "No data found."
+    returntxt = ""
+    summary = ""
+    httpurl = "https://newsroom.accenture.com/news/2024/accenture-invests-in-martian-to-bring-dynamic-routing-of-large-language-queries-and-more-effective-ai-systems-to-clients"
+    content = fetch_webpage(httpurl)
+    print("Using Newsroom Plugin")
+    if content:
+        summary = extract_and_summarize(content)
+        return summary
+    else:
+        return None
+
+    return summary
+
+def bing_search_and_summarize(query: str) -> str:
+    """
+    Perform a Bing search, retrieve content, and summarize the results with citations.
+
+    :param query: The search query string.
+    :param subscription_key: Bing API subscription key.
+    :param endpoint: Bing API endpoint URL.
+    :return: Summary with citations.
+    """
+    SUBSCRIPTION_KEY = os.getenv("BING_KEY")
+    ENDPOINT = "https://api.bing.microsoft.com/v7.0/search"
+    # Set up the headers for the API request
+    headers = {
+        "Ocp-Apim-Subscription-Key": subscription_key
+    }
+
+    # Define the search parameters
+    params = {
+        "q": query,
+        "count": 5,  # Number of results to fetch
+        "textDecorations": True,
+        "textFormat": "HTML"
+    }
+
+    # Make the API request
+    response = requests.get(endpoint, headers=headers, params=params)
+
+    if response.status_code != 200:
+        raise Exception(f"Bing Search API request failed with status code {response.status_code}: {response.text}")
+
+    search_results = response.json()
+
+    # Extract the snippets and URLs from the search results
+    snippets = []
+    citations = []
+
+    for result in search_results.get("webPages", {}).get("value", []):
+        snippets.append(result.get("snippet", ""))
+        citations.append(result.get("url", ""))
+
+    if not snippets:
+        return "No results found."
+
+    summary_text = ' '.join(snippets)
+    citations_text = "\n".join([f"Source: {url}" for url in citations])
+
+    return f"Summary:\n{summary_text}\n\nCitations:\n{citations_text}"
 
 def mfg_compl_data(query: str) -> str:
     return extractmfgresults(query)
@@ -94,7 +204,7 @@ async def mfg_response(query):
         You are a planning agent.
         Your job is to break down complex tasks into smaller, manageable subtasks.
         Your team members are:
-            Web search agent: Searches for information
+            Web search agent: Searches for information, other than manufacturing complaince data.
             Manufacturing Industry analyst: You are Manufacturing Complaince, OSHA, CyberSecurity AI agent
 
         You only plan and delegate tasks - you do not execute them yourself.
@@ -111,7 +221,7 @@ async def mfg_response(query):
     web_search_agent = AssistantAgent(
         "WebSearchAgent",
         description="A web search agent.",
-        tools=[search_web_tool],
+        tools=[bing_search_and_summarize],
         model_client=model_client,
         system_message="""
         You are a web search agent.
