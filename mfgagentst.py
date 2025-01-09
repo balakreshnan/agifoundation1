@@ -144,8 +144,8 @@ def bing_search_and_summarize(query: str) -> str:
     :param endpoint: Bing API endpoint URL.
     :return: Summary with citations.
     """
-    SUBSCRIPTION_KEY = os.getenv("BING_KEY")
-    ENDPOINT = "https://api.bing.microsoft.com/v7.0/search"
+    subscription_key = os.getenv("BING_KEY")
+    endpoint = "https://api.bing.microsoft.com/v7.0/search"
     # Set up the headers for the API request
     headers = {
         "Ocp-Apim-Subscription-Key": subscription_key
@@ -204,7 +204,7 @@ async def mfg_response(query):
         You are a planning agent.
         Your job is to break down complex tasks into smaller, manageable subtasks.
         Your team members are:
-            Web search agent: Searches for information, other than manufacturing complaince data.
+            Web search agent: Searches for information using bing search, other than manufacturing complaince data.
             Manufacturing Industry analyst: You are Manufacturing Complaince, OSHA, CyberSecurity AI agent
 
         You only plan and delegate tasks - you do not execute them yourself.
@@ -225,14 +225,14 @@ async def mfg_response(query):
         model_client=model_client,
         system_message="""
         You are a web search agent.
-        Your only tool is search_tool - use it to find information.
+        Your only tool is bing_search_and_summarize - use it to find information.
         You make only one search call at a time.
         Once you have the results, you never do calculations based on them.
         """,
     )
 
     mfg_ind_analyst_agent = AssistantAgent(
-        "DataAnalystAgent",
+        "ManufacturingIndustryAgent",
         description="A Manufacturing Complaince, OSHA, CyberSecurity AI agent. Data source is stored in AI Search to get grounded information.",
         model_client=model_client,
         tools=[mfg_compl_data],
