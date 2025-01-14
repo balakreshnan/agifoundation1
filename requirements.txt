@@ -19,6 +19,6 @@ azure-ai-inference
 azure-monitor-opentelemetry 
 opentelemetry-instrumentation-openai-v2
 semantic-kernel
-autogen-agentchat==0.4.0
-autogen-ext[openai]==0.4.0
-autogen-ext[magentic-one,openai]==0.4.0
+autogen-agentchat
+autogen-ext[openai]
+autogen-ext[magentic-one,openai]
