@@ -354,10 +354,11 @@ async def processpdf_agent(query):
                                                 api_key=os.getenv("AZURE_OPENAI_API_KEY"), 
                                                 api_version="2024-10-21")
 
-    team = SelectorGroupChat(
+    team = MagenticOneGroupChat(
         [planning_agent, pdf_analyst_agent],
         model_client=model_client_mini,
         termination_condition=termination,
+        max_turns=1,
     )
 
     result = await Console(team.run_stream(task=query))
@@ -442,7 +443,7 @@ async def mfg_response(query):
 
     team = MagenticOneGroupChat([planning_agent, web_search_agent, mfg_ind_analyst_agent], 
                                 model_client=model_client_mini,
-                                termination_condition=termination)
+                                termination_condition=termination, max_turns=1)
 
     result = await Console(team.run_stream(task=query))
     #print(result)  # Process the result or output here
@@ -472,6 +473,7 @@ def mfgagents():
     #st.subheader("Upload and Chat with Your PDF")
     uploaded_file = st.file_uploader("Upload a PDF file", type=["pdf"])
     # user_input = st.text_input("Enter the question to ask the AI model", "what are the personal protection i should consider in manufacturing?")
+    # what are the precaution to take when handling chemicals for eyes and hands?
     if prompt := st.chat_input("what are the personal protection i should consider in manufacturing?", key="chat1"):
         # Call the extractproductinfo function
         #st.write("Searching for the query: ", prompt)
