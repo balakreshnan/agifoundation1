@@ -13,16 +13,18 @@ load_dotenv()
 client = AzureOpenAI(
   azure_endpoint = os.getenv("AZURE_OPENAI_O1_ENDPOINT"), 
   api_key=os.getenv("AZURE_OPENAI_O1_KEY"),  
-  api_version="2024-10-21"
+  api_version="2024-12-01-preview"
 )
 
-model_name = "o1-preview"
+model_name = "o1"
 
 def encode_image(image_path):
     with open(image_path, "rb") as image_file:
         return base64.b64encode(image_file.read()).decode('utf-8')
     
-def processimage(base64_image, imgprompt, model_name="o1-preview"):
+def processimage(base64_image, imgprompt, model_name="o1"):
+    img_path = os.path.join(os.getcwd(),"temp1.jpeg")
+    encoded_image = base64.b64encode(open(img_path, 'rb').read()).decode('ascii')
     response = client.chat.completions.create(
     model=model_name,
     messages=[
@@ -33,13 +35,13 @@ def processimage(base64_image, imgprompt, model_name="o1-preview"):
             {
             "type": "image_url",
             "image_url": {
-                "url" : f"data:image/jpeg;base64,{base64_image}",
+                "url" : f"data:image/jpeg;base64,{encoded_image}",
             },
             },
         ],
         }
     ],
-    max_completion_tokens=4000,
+    # max_completion_tokens=4000,
     #temperature=0,
     #top_p=1,
     #seed=105,
@@ -80,7 +82,7 @@ def autocadinsightso1():
     temp_file_path = ""
 
     #tab1, tab2, tab3, tab4 = st.tabs('RFP PDF', 'RFP Research', 'Draft', 'Create Word')
-    modeloptions1 = ["gpt-4o-2", "gpt-4o-g", "gpt-4o", "gpt-4-turbo", "gpt-35-turbo"]
+    modeloptions1 = [" o1", "o1-prevoew", "gpt-4o-2", "gpt-4o-g", "gpt-4o", "gpt-4-turbo", "gpt-35-turbo"]
     imgfile = "temp1.jpg"
     # Create a dropdown menu using selectbox method
     selected_optionmodel1 = st.selectbox("Select an Model:", modeloptions1)
