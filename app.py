@@ -2,6 +2,7 @@ import streamlit as st
 from cadto3d import autocadinsights
 from mfgagentst import mfgagents
 from cadto3do1 import autocadinsightso1
+from codeagentst import codeagentst
 
 # Set page size
 st.set_page_config(
@@ -26,6 +27,7 @@ load_css("styles.css")
 nav_option = st.sidebar.selectbox("Navigation", ["Home", 
                                                  "AutoCAD", "Auto CAD o1"
                                                  , "Manufacturing"
+                                                 , "CodeAgent"
                                                  , "About"])
 
 # Display the selected page
@@ -35,5 +37,7 @@ if nav_option == "Auto CAD o1":
     autocadinsightso1()
 elif nav_option == "Manufacturing":
     mfgagents()
+elif nav_option == "CodeAgent":
+    codeagentst()
 elif nav_option == "About":
     autocadinsights()
