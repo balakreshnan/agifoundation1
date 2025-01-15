@@ -2,9 +2,6 @@ __pycache__/
 .vscode/
 local.settings.json
 .venv/
-runs/
-pdfdocs/
 .env
-.promptflow/
 .coding/
 .output/
