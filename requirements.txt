@@ -19,6 +19,7 @@ azure-ai-inference
 azure-monitor-opentelemetry 
 opentelemetry-instrumentation-openai-v2
 semantic-kernel
+autogen-core
 autogen-agentchat
 autogen-ext[openai]
 autogen-ext[magentic-one,openai]

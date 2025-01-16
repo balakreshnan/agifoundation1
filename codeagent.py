@@ -52,6 +52,11 @@ model_client = AzureOpenAIChatCompletionClient(model="gpt-4o",
                                                seed=42,
                                                maz_tokens=4096)
 
+def extract_code_tools(content: str) -> str:
+    code_blocks = ""
+    code_blocks = extract_code(content)
+    return code_blocks
+
 async def main():
     st.set_page_config(page_title="CodeAgent", page_icon=":robot:")
     st.title("CodeAgent :robot:")
@@ -62,7 +67,7 @@ async def main():
     code_create = AssistantAgent(
         "CreateCodeAgent",
         description="Create code for the given task.",
-        #tools=[bing_search_and_summarize],
+        # tools=[extract_code_tools],
         model_client=model_client,
         system_message="""
         Create code for the given task. Create code in python and only respond code as output.
