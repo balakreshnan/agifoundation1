@@ -59,15 +59,21 @@ def extract_code_tools(content: str) -> str:
     code_blocks = ""
     code_blocks = extract_code(content)
     print('Code blocks:', code_blocks)
-    local_executor = LocalCommandLineCodeExecutor(work_dir=work_dir)
-    result = local_executor.execute_code_blocks(
-            code_blocks=[
-                CodeBlock(language="python", code=code_blocks),
-            ],
-            cancellation_token=CancellationToken(),
-        )
-    #print(result)
-    print('Output of code: ' , result.output.strip())
+    python_code = ""
+    if code_blocks:
+        print("Code blocks extracted:", code_blocks)
+        #shell_commands = next(block[1] for block in code_blocks if block[0] == 'sh' or block[0] == 'bash' or block[0] == 'shell')
+        #print(shell_commands)
+        python_code = next(block[1] for block in code_blocks if block[0] == 'python')
+        local_executor = LocalCommandLineCodeExecutor(work_dir=work_dir)
+        result = local_executor.execute_code_blocks(
+                code_blocks=[
+                    CodeBlock(language="python", code=python_code),
+                ],
+                cancellation_token=CancellationToken(),
+            )
+        #print(result)
+        print('Output of code: ' , result.output.strip())
     return code_blocks
 
 async def main():
@@ -90,13 +96,6 @@ async def main():
         """,        
     )
 
-    # data_create = MagenticOneCoderAgent(
-    #     "CreateCodeAgent",
-    #     # description="Create code for the given task.",
-    #     #tools=[extract_code_tools],
-    #     model_client=model_client,     
-    # )
-
     text_mention_termination = TextMentionTermination("TERMINATE")
     max_messages_termination = MaxMessageTermination(max_messages=25)
     termination = text_mention_termination | max_messages_termination
@@ -105,21 +104,32 @@ async def main():
                                  termination_condition=termination, max_turns=1)
     
     # Extract the generated code
-    result = await Console(team.run_stream(task="Write a Python function that to chat last 6 months of Tesla stock price using yfinance library and print as table."))
+    query = "Write a Python function that to chat last 6 months of Tesla stock price using yfinance library and print as table."
+    result = await Console(team.run_stream(task=query))
     last_message = result.messages
     # print('Code created:', last_message[-1].content)
-    last_message = result.messages
     code_blocks = extract_code(last_message[-1].content)
-    print('Code blocks:', code_blocks)
-    local_executor = LocalCommandLineCodeExecutor(work_dir=work_dir)
-    result = await local_executor.execute_code_blocks(
-            code_blocks=[
-                CodeBlock(language="python", code=code_blocks),
-            ],
-            cancellation_token=CancellationToken(),
-        )
-    #print(result)
-    print(result.output.strip())
+    # print('Code blocks:', code_blocks)
+    try:
+        # print("Start")
+        python_code = ""
+        if code_blocks:
+            print("Code blocks extracted:", code_blocks)
+            #shell_commands = next(block[1] for block in code_blocks if block[0] == 'sh' or block[0] == 'bash' or block[0] == 'shell')
+            #print(shell_commands)
+            python_code = next(block[1] for block in code_blocks if block[0] == 'python')
+            local_executor = LocalCommandLineCodeExecutor(work_dir=work_dir)
+            result = await local_executor.execute_code_blocks(
+                    code_blocks=[
+                        CodeBlock(language="python", code=python_code),
+                    ],
+                    cancellation_token=CancellationToken(),
+                )
+            #print(result)
+            print(result.output.strip())
+    except Exception as e:
+        print(e)
 
+    
 if __name__ == "__main__":
     asyncio.run(main())
