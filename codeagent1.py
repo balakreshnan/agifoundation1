@@ -99,15 +99,14 @@ async def main():
     text_mention_termination = TextMentionTermination("TERMINATE")
     max_messages_termination = MaxMessageTermination(max_messages=25)
     termination = text_mention_termination | max_messages_termination
-    team = MagenticOneGroupChat([code_create], 
-                                 model_client=model_client,
+    team = MagenticOneGroupChat([code_create], model_client=model_client,
                                  termination_condition=termination, max_turns=1)
     
     # Extract the generated code
     query = "Write a Python function that to chat last 6 months of Tesla stock price using yfinance library and print as table."
     result = await Console(team.run_stream(task=query))
     last_message = result.messages
-    # print('Code created:', last_message[-1].content)
+    print('Code created:', last_message[-1].content)
     code_blocks = extract_code(last_message[-1].content)
     # print('Code blocks:', code_blocks)
     try:
