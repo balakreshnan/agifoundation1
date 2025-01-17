@@ -1,6 +1,7 @@
 import os
 from pathlib import Path
 import tempfile
+import json
 
 from autogen import ConversableAgent
 from autogen.coding import LocalCommandLineCodeExecutor
@@ -94,13 +95,52 @@ today = datetime.datetime.now().strftime("%Y-%m-%d")
 chat_result = code_executor_agent.initiate_chat(
     code_writer_agent,
     message=f"Today is {today}. Write Python code to plot TSLA's and META's "
-    "stock price gains YTD, and save the plot to a file named 'stock_gains.png'.",
+    "stock price gains YTD, and save the plot to a file named 'stock_gains.png'."
+    "Also print the values of the stock gains.",
     max_turns=5
 )
 
-print(chat_result)
+# print(chat_result)
+
+def parse_last_message(chat_result):
+    # Display the last content in chat_history  
+    # last_content = chat_result.chat_history[-1]['content']  
+    # print("Last content in chat_history:")  
+    # print(last_content)  
+    # Print all content created by the assistant  
+    print("Content from assistant:")  
+    for entry in chat_result.chat_history:  
+        if entry['role'] == 'assistant':  
+            print('Assistant Message: ' , entry['content'])
+        if entry['role'] == 'user':  
+            print('User Message: ' , entry['content'])
+    
+    # Print token usage and cost  
+    cost_info = chat_result.cost['usage_including_cached_inference']  
+    total_cost = cost_info['total_cost']  
+    total_tokens = cost_info['gpt-4o-2024-08-06']['total_tokens']  
+    prompt_tokens = cost_info['gpt-4o-2024-08-06']['prompt_tokens']  
+    completion_tokens = cost_info['gpt-4o-2024-08-06']['completion_tokens']  
+    
+    print("\nToken usage and cost information:")  
+    print(f"Total cost: ${total_cost}")  
+    print(f"Total tokens: {total_tokens}")  
+    print(f"Prompt tokens: {prompt_tokens}")  
+    print(f"Completion tokens: {completion_tokens}") 
+
+parse_last_message(chat_result)
 
 #img = Image.open("C:\Code\agifoundation1\coding\plot_stock_gains.png")
 
 # Display the image
 #img.show()
+
+# Extract the code block from the assistant's response  
+for entry in chat_result.chat_history:  
+    if entry['role'] == 'user' and '```python' in entry['content']:  
+        start = entry['content'].find('```python') + len('```python\n')  
+        end = entry['content'].find('```', start)  
+        code_block = entry['content'][start:end].strip()  
+        print("Extracted Code:\n")  
+        print(code_block)  
+        break 
