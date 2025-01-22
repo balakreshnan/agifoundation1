@@ -9,6 +9,8 @@ load_dotenv()
 
 connection_string = os.environ["PROJECT_CONNECTION_STRING_EASTUS2"] 
 
+print(f"Connection string: {connection_string}")
+
 project_client = AIProjectClient.from_connection_string(
     credential=DefaultAzureCredential(),
     conn_str=connection_string,
