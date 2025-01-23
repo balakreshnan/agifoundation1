@@ -9,9 +9,6 @@ qrcode[pil]
 azure-search-documents==11.6.0b4
 streamlit
 PyPDF2
-autogen-core
-autogen-agentchat
-autogen-ext
 azure-ai-projects
 azure-monitor-opentelemetry
 ag2
@@ -23,5 +20,4 @@ autogen-core
 autogen-agentchat
 autogen-ext[openai]
 autogen-ext[magentic-one,openai]
-opentelemetry
 azure-core-tracing-opentelemetry
