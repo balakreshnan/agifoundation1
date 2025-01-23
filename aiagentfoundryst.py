@@ -24,6 +24,9 @@ from azure.ai.evaluation import (
     HateUnfairnessEvaluator,
 )
 from mfgdata import extractmfgresults, extracttop5questions
+from datetime import datetime
+import streamlit as st
+import datetime
 from dotenv import load_dotenv
 
 # Load .env file
@@ -158,7 +161,13 @@ def evalmetrics():
     # parse_json(results)
     print("Done")
 
-def main():
+# Initialize chat history in session state
+if "chat_history" not in st.session_state:
+    st.session_state.chat_history = []
+
+def processagents(prompt):
+    returntxt = ""
+
     with tracer.start_as_current_span(scenario):
         conn_list = project_client.connections.list()
         conn_id = ""
@@ -172,8 +181,9 @@ def main():
 
         agent = project_client.agents.create_agent(
             model="gpt-4o",
-            name="my-assistant",
-            instructions="You are a helpful assistant",
+            name="mfgcompliance-agent",
+            instructions=f"""You are Manufacturing Complaince, OSHA, CyberSecurity AI agent. Be politely, and provide positive tone answers.
+     Based on the question do a detail analysis on information and provide the best answers.""",
             tools=ai_search.definitions,
             tool_resources = ai_search.resources,
         )
@@ -187,7 +197,7 @@ def main():
         message = project_client.agents.create_message(
             thread_id=thread.id,
             role="user",
-            content="what are the personal protection i should consider in manufacturing?",
+            content=prompt,
         )
         print(f"Created message, message ID: {message.id}")
             
@@ -204,16 +214,56 @@ def main():
         # print(f"Messages: {messages}")
             
         assistant_message = ""
+        content = ""
         for message in messages.data:
             if message["role"] == "assistant":
                 assistant_message = message["content"][0]["text"]["value"]
+        
+        print('messages:', messages)    
+
+        # Filter messages from the assistant
+        #assistant_messages = [msg for msg in messages if msg["role"] == 'assistant']
+        #last_assistant_message = assistant_messages[-1].content
+        # last_assistant_message = message.data[-1].content[-1].text.value
+        # Extract the assistant messages
+        assistant_messages = [msg for msg in messages['data'] if msg['role'] == 'assistant']
+
+        # Get the last assistant message
+        if assistant_messages:
+            last_assistant_message = assistant_messages[-1]
+            content = last_assistant_message['content'][0]['text']['value']
+            print("Last assistant message content:")
+            print(content)
+        else:
+            print("No assistant messages found.")
+
+        if content:
+            returntxt = content
 
         # Get the last message from the sender
         print(f"Assistant response: {assistant_message}")
 
-        #now lets evaluate the output
-        evalmetrics()
+    return returntxt
 
+def showagents():
+    st.title("Azure AI Foundry Agents")
+
+    if prompt := st.chat_input("what are the personal protection i should consider in manufacturing?", key="chat1"):
+        st.chat_message("user").markdown(prompt, unsafe_allow_html=True)
+        st.session_state.chat_history.append({"role": "user", "message": prompt})
+        starttime = datetime.datetime.now()
+        results = processagents(prompt)
+        endtime = datetime.datetime.now()
+
+        #st.markdown(f"Time taken to process: {endtime - starttime}", unsafe_allow_html=True)
+        results += f"\n Time taken to process: {endtime - starttime}"
+        st.session_state.chat_history.append({"role": "assistant", "message": results})
+        st.chat_message("assistant").markdown(results, unsafe_allow_html=True)
+
+        # Keep only the last 10 messages
+        if len(st.session_state.chat_history) > 20:  # 10 user + 10 assistant
+            st.session_state.chat_history = st.session_state.chat_history[-20:]
 
 if __name__ == "__main__":
-    main()
+    showagents()
+    # evalmetrics()
