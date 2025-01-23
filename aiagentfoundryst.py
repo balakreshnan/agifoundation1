@@ -101,8 +101,8 @@ def evalmetrics():
         print(ex)
 
     subscription_id = os.getenv("AZURE_SUBSCRIPTION_ID")
-    resource_group_name = os.getenv("AZURE_RESOURCE_GROUP_SAFETY")
-    project_name = os.getenv("AZUREAI_PROJECT_NAME_SAFETY")
+    resource_group_name = os.getenv("AZURE_RESOURCE_GROUP")
+    project_name = os.getenv("AZUREAI_PROJECT_NAME")
     print(subscription_id, resource_group_name, project_name)
     azure_ai_project = AzureAIProject(subscription_id=subscription_id, 
                                       resource_group_name=resource_group_name, 

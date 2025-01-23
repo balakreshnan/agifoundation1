@@ -6,7 +6,7 @@ from azure.ai.projects.models import AzureAISearchTool
 from opentelemetry import trace
 from azure.monitor.opentelemetry import configure_azure_monitor
 from pprint import pprint
-from azure.ai.evaluation import evaluate, AzureAIProject, AzureOpenAIModelConfiguration
+from azure.ai.evaluation import evaluate, AzureAIProject, AzureOpenAIModelConfiguration, F1ScoreEvaluator
 from azure.ai.evaluation import ProtectedMaterialEvaluator, IndirectAttackEvaluator
 from azure.ai.evaluation.simulator import AdversarialSimulator, AdversarialScenario, IndirectAttackSimulator
 from azure.identity import DefaultAzureCredential
@@ -24,6 +24,7 @@ from azure.ai.evaluation import (
     HateUnfairnessEvaluator,
 )
 from mfgdata import extractmfgresults, extracttop5questions
+from azure.ai.evaluation import BleuScoreEvaluator, GleuScoreEvaluator, RougeScoreEvaluator, MeteorScoreEvaluator, RougeType
 from dotenv import load_dotenv
 
 # Load .env file
@@ -98,8 +99,8 @@ def evalmetrics():
         print(ex)
 
     subscription_id = os.getenv("AZURE_SUBSCRIPTION_ID")
-    resource_group_name = os.getenv("AZURE_RESOURCE_GROUP_SAFETY")
-    project_name = os.getenv("AZUREAI_PROJECT_NAME_SAFETY")
+    resource_group_name = os.getenv("AZURE_RESOURCE_GROUP")
+    project_name = os.getenv("AZUREAI_PROJECT_NAME")
     print(subscription_id, resource_group_name, project_name)
     azure_ai_project = AzureAIProject(subscription_id=subscription_id, 
                                       resource_group_name=resource_group_name, 
@@ -120,6 +121,11 @@ def evalmetrics():
     groundedness_evaluator = GroundednessEvaluator(model_config)
     fluency_evaluator = FluencyEvaluator(model_config)
     # similarity_evaluator = SimilarityEvaluator(model_config)
+    f1_evaluator = F1ScoreEvaluator()
+    bleu_evaluator = BleuScoreEvaluator()
+    gleu_evaluator = GleuScoreEvaluator()
+    meteor_evaluator = MeteorScoreEvaluator(alpha=0.8)
+    rouge_evaluator = RougeScoreEvaluator(rouge_type=RougeType.ROUGE_4)
 
     results = evaluate(
         evaluation_name="rfpevaluation",
@@ -138,6 +144,11 @@ def evalmetrics():
             "groundedness": groundedness_evaluator,
             "fluency": fluency_evaluator,
         #    "similarity": similarity_evaluator,
+            "f1": f1_evaluator,
+            "bleu": bleu_evaluator,
+            "gleu": gleu_evaluator,
+            "meteor": meteor_evaluator,
+            "rouge": rouge_evaluator,
         },        
         evaluator_config={
             "content_safety": {"query": "${data.query}", "response": "${target.response}"},
@@ -150,6 +161,11 @@ def evalmetrics():
             },
             "fluency": {"response": "${target.response}", "context": "${data.context}", "query": "${data.query}"},
             "similarity": {"response": "${target.response}", "context": "${data.context}", "query": "${data.query}"},
+            "f1": {"response": "${target.response}", "ground_truth": "${data.ground_truth}"},
+            "bleu": {"response": "${target.response}", "ground_truth": "${data.ground_truth}"},
+            "gleu": {"response": "${target.response}", "ground_truth": "${data.ground_truth}"},
+            "meteor": {"response": "${target.response}", "ground_truth": "${data.ground_truth}"},
+            "rouge": {"response": "${target.response}", "ground_truth": "${data.ground_truth}"},
         },
         azure_ai_project=azure_ai_project,
         output_path="./rsoutputmetrics.json",
