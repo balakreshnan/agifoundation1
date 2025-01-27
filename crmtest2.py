@@ -6,7 +6,9 @@ from pyadomd import Pyadomd
 # https://github.com/S-C-O-U-T/Pyadomd
 
 conn_str = 'Provider=MSOLAP;Data Source=AzureDashBoardAS;Catalog=Azure Dashboard;'
-query = """EVALUATE Product"""
+# query = """EVALUATE Product"""
+query = """EVALUATE TPAccountFact"""
+#query = """EVALUATE AzureDashBoardAS"""
 
 # query = """
 # SELECT 
