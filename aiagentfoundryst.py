@@ -1,4 +1,5 @@
 import os
+import time
 from azure.ai.projects import AIProjectClient
 from azure.identity import DefaultAzureCredential
 from azure.ai.projects.models import AzureAISearchTool
@@ -7,9 +8,10 @@ from openai import AzureOpenAI
 from opentelemetry import trace
 from azure.monitor.opentelemetry import configure_azure_monitor
 from pprint import pprint
-from azure.ai.evaluation import evaluate, AzureAIProject, AzureOpenAIModelConfiguration
 from azure.ai.evaluation import ProtectedMaterialEvaluator, IndirectAttackEvaluator
+from azure.ai.evaluation import evaluate, AzureAIProject, AzureOpenAIModelConfiguration, F1ScoreEvaluator
 from azure.ai.evaluation.simulator import AdversarialSimulator, AdversarialScenario, IndirectAttackSimulator
+from azure.ai.projects.models import FunctionTool, RequiredFunctionToolCall, SubmitToolOutputsAction, ToolOutput
 from azure.identity import DefaultAzureCredential
 from azure.ai.evaluation import RelevanceEvaluator
 from azure.ai.evaluation import (
@@ -29,6 +31,7 @@ from mfgdata import extractmfgresults, extracttop5questions
 from datetime import datetime
 import streamlit as st
 import datetime
+from azure.ai.evaluation import BleuScoreEvaluator, GleuScoreEvaluator, RougeScoreEvaluator, MeteorScoreEvaluator, RougeType
 from dotenv import load_dotenv
 
 # Load .env file
@@ -142,6 +145,11 @@ def evalmetrics():
     groundedness_evaluator = GroundednessEvaluator(model_config)
     fluency_evaluator = FluencyEvaluator(model_config)
     # similarity_evaluator = SimilarityEvaluator(model_config)
+    f1_evaluator = F1ScoreEvaluator()
+    bleu_evaluator = BleuScoreEvaluator()
+    gleu_evaluator = GleuScoreEvaluator()
+    meteor_evaluator = MeteorScoreEvaluator(alpha=0.8)
+    rouge_evaluator = RougeScoreEvaluator(rouge_type=RougeType.ROUGE_4)
 
     results = evaluate(
         evaluation_name="rfpevaluation",
@@ -160,6 +168,11 @@ def evalmetrics():
             "groundedness": groundedness_evaluator,
             "fluency": fluency_evaluator,
         #    "similarity": similarity_evaluator,
+            "f1": f1_evaluator,
+            "bleu": bleu_evaluator,
+            "gleu": gleu_evaluator,
+            "meteor": meteor_evaluator,
+            "rouge": rouge_evaluator,
         },        
         evaluator_config={
             "content_safety": {"query": "${data.query}", "response": "${target.response}"},
@@ -172,6 +185,11 @@ def evalmetrics():
             },
             "fluency": {"response": "${target.response}", "context": "${data.context}", "query": "${data.query}"},
             "similarity": {"response": "${target.response}", "context": "${data.context}", "query": "${data.query}"},
+            "f1": {"response": "${target.response}", "ground_truth": "${data.ground_truth}"},
+            "bleu": {"response": "${target.response}", "ground_truth": "${data.ground_truth}"},
+            "gleu": {"response": "${target.response}", "ground_truth": "${data.ground_truth}"},
+            "meteor": {"response": "${target.response}", "ground_truth": "${data.ground_truth}"},
+            "rouge": {"response": "${target.response}", "ground_truth": "${data.ground_truth}"},
         },
         azure_ai_project=azure_ai_project,
         output_path="./rsoutputmetrics.json",
@@ -221,19 +239,26 @@ def processagents(prompt):
         ai_search = AzureAISearchTool(conn_id, "mfggptdata")
         # ai_search.add_index(conn_id, "mfggptdata")
 
+        #print('AI Search:', ai_search)
+        # Debugging and validation logic for ai_search.definitions and ai_search.resources
+        print("AI Search Definitions:")
+        pprint(ai_search.definitions)
+
         agent = project_client.agents.create_agent(
             model="gpt-4o",
             name="mfgcompliance-agent",
             instructions=f"""You are Manufacturing Complaince, OSHA, CyberSecurity AI agent. Be politely, and provide positive tone answers.
             Based on the question do a detail analysis on information and provide the best answers.
 
-            Only answer from the data source provided in tools. Data Source: Azure AI Search.
+            Only answer from tools provided. 
+            Data Source: Azure AI Search.
             Please provide Citation and References for the answers as url. [url1] [url2].
 
             Respond back as markdown format only Show all links as hyperlinks.
             """,
             tools=ai_search.definitions,
             tool_resources = ai_search.resources,
+            headers={"x-ms-enable-preview": "true"},
         )
         print(f"Created agent, ID: {agent.id}")
 
@@ -287,6 +312,37 @@ def processagents(prompt):
         run = project_client.agents.create_and_process_run(thread_id=thread.id, assistant_id=agent.id)
         print(f"Run finished with status: {run.status}")
         
+        while run.status in ["queued", "in_progress", "requires_action"]:
+            time.sleep(1)
+            run = project_client.agents.get_run(thread_id=thread.id, run_id=run.id)
+            if run.status == "requires_action" and isinstance(run.required_action, SubmitToolOutputsAction):
+                tool_calls = run.required_action.submit_tool_outputs.tool_calls
+                if not tool_calls:
+                    print("No tool calls provided - cancelling run")
+                    project_client.agents.cancel_run(thread_id=thread.id, run_id=run.id)
+                    break
+
+                # tool_outputs = []
+                # for tool_call in tool_calls:
+                #     if isinstance(tool_call, RequiredFunctionToolCall):
+                #         try:
+                #             print(f"Executing tool call: {tool_call}")
+                #             output = functions.execute(tool_call)
+                #             tool_outputs.append(
+                #                 ToolOutput(
+                #                     tool_call_id=tool_call.id,
+                #                     output=output,
+                #                 )
+                #             )
+                #         except Exception as e:
+                #             print(f"Error executing tool_call {tool_call.id}: {e}")
+
+                # print(f"Tool outputs: {tool_outputs}")
+                # if tool_outputs:
+                #     project_client.agents.submit_tool_outputs_to_run(
+                #         thread_id=thread.id, run_id=run.id, tool_outputs=tool_outputs
+                #     )
+
         if run.status == "failed":
             # Check if you got "Rate limit is exceeded.", then you want to get more quota
             print(f"Run failed: {run.last_error}")
