@@ -1,4 +1,7 @@
+import json
 import os
+import time
+from typing import Any, Callable, Set, Dict, List, Optional
 from azure.ai.projects import AIProjectClient
 from azure.identity import DefaultAzureCredential
 from azure.ai.projects.models import AzureAISearchTool
@@ -25,6 +28,7 @@ from azure.ai.evaluation import (
 )
 from mfgdata import extractmfgresults, extracttop5questions
 from azure.ai.evaluation import BleuScoreEvaluator, GleuScoreEvaluator, RougeScoreEvaluator, MeteorScoreEvaluator, RougeType
+from azure.ai.projects.models import FunctionTool, RequiredFunctionToolCall, SubmitToolOutputsAction, ToolOutput, ToolSet
 from dotenv import load_dotenv
 
 # Load .env file
@@ -72,8 +76,9 @@ def parse_json(data):
         print(f"Relevance: {relevance}")
         print("-" * 50)
 
-def evalmetrics():
+def evalmetrics(query: str) -> str:
     
+    returntxt = ""
     # Load .env file
     # load_dotenv()
     #citationtxt = extractrfpresults("Provide summary of Resources for Railway projects with 200 words?")
@@ -173,6 +178,47 @@ def evalmetrics():
     # pprint(results)
     # parse_json(results)
     print("Done")
+    returntxt = "Completed Evaluation"
+    return returntxt
+
+def send_email_using_recipient_name(recipient: str, subject: str, body: str) -> str:
+    """
+    Sends an email with the specified subject and body to the recipient.
+
+    :param recipient (str): Name of the recipient.
+    :param subject (str): Subject of the email.
+    :param body (str): Body content of the email.
+    :return: Confirmation message.
+    :rtype: str
+    """
+    # In a real-world scenario, you'd use an SMTP server or an email service API.
+    # Here, we'll mock the email sending.
+    print(f"Sending email to {recipient}...")
+    print(f"Subject: {subject}")
+    print(f"Body:\n{body}")
+
+    message_json = json.dumps({"message": f"Email successfully sent to {recipient}."})
+    return message_json
+
+def send_email(recipient: str, subject: str, body: str) -> str:
+    """
+    Sends an email with the specified subject and body to the recipient.
+
+    :param recipient (str): Email address of the recipient.
+    :param subject (str): Subject of the email.
+    :param body (str): Body content of the email.
+    :return: Confirmation message.
+    :rtype: str
+    """
+    # In a real-world scenario, you'd use an SMTP server or an email service API.
+    # Here, we'll mock the email sending.
+    print(f"Sending email to {recipient}...")
+    print(f"Subject: {subject}")
+    print(f"Body:\n{body}")
+
+    message_json = json.dumps({"message": f"Email successfully sent to {recipient}."})
+    return message_json
+
 
 def main():
     with tracer.start_as_current_span(scenario):
@@ -228,7 +274,75 @@ def main():
         print(f"Assistant response: {assistant_message}")
 
         #now lets evaluate the output
-        evalmetrics()
+        # evalmetrics("evaluation")
+
+        # Now evaluate using agent for metrics
+
+        # https://github.com/Azure/azure-sdk-for-python/blob/azure-ai-projects_1.0.0b5/sdk/ai/azure-ai-projects/samples/agents/user_functions.py
+
+        user_functions: Set[Callable[..., Any]] = {
+            send_email,
+            evalmetrics,
+        }
+        functions = FunctionTool(user_functions)
+        toolset = ToolSet()
+        toolset.add(functions)
+
+        agent = project_client.agents.create_agent(
+            model="gpt-4o",
+            name="evaluator",
+            instructions="You are a helpful assistant",
+            toolset=toolset,
+        )
+        print(f"Created agent, ID: {agent.id}")
+
+        thread = project_client.agents.create_thread()
+        print(f"Created thread, ID: {thread.id}")
+
+        message = project_client.agents.create_message(
+            thread_id=thread.id,
+            role="user",
+            content="what are the personal protection i should consider in manufacturing?",
+        )
+        print(f"Created message, ID: {message.id}")
+
+        run = project_client.agents.create_run(thread_id=thread.id, assistant_id=agent.id)
+        print(f"Created run, ID: {run.id}")
+
+        while run.status in ["queued", "in_progress", "requires_action"]:
+            time.sleep(1)
+            run = project_client.agents.get_run(thread_id=thread.id, run_id=run.id)
+
+            if run.status == "requires_action" and isinstance(run.required_action, SubmitToolOutputsAction):
+                tool_calls = run.required_action.submit_tool_outputs.tool_calls
+                if not tool_calls:
+                    print("No tool calls provided - cancelling run")
+                    project_client.agents.cancel_run(thread_id=thread.id, run_id=run.id)
+                    break
+
+                tool_outputs = []
+                for tool_call in tool_calls:
+                    if isinstance(tool_call, RequiredFunctionToolCall):
+                        try:
+                            print(f"Executing tool call: {tool_call}")
+                            output = functions.execute(tool_call)
+                            tool_outputs.append(
+                                ToolOutput(
+                                    tool_call_id=tool_call.id,
+                                    output=output,
+                                )
+                            )
+                        except Exception as e:
+                            print(f"Error executing tool_call {tool_call.id}: {e}")
+
+                print(f"Tool outputs: {tool_outputs}")
+                if tool_outputs:
+                    project_client.agents.submit_tool_outputs_to_run(
+                        thread_id=thread.id, run_id=run.id, tool_outputs=tool_outputs
+                    )
+
+            print(f"Current run status: {run.status}")
+        print(f"Run completed with status: {run.status}")
 
 
 if __name__ == "__main__":
