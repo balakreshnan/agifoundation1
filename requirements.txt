@@ -4,7 +4,6 @@ python-dotenv
 bs4
 azure-identity
 pandas
-promptflow[azure]
 qrcode[pil]
 azure-search-documents==11.6.0b4
 streamlit
