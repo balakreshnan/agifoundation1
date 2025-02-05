@@ -52,7 +52,8 @@ def processo3(query: str):
         messages=messages,
         max_completion_tokens=100000,
         stop=None,  
-        stream=False
+        stream=False,
+        reasoning_effort="high",
     )
 
     # print(completion.to_json())  

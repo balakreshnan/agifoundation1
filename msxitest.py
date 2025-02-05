@@ -5,6 +5,7 @@ from pyadomd import Pyadomd
 
 # https://github.com/S-C-O-U-T/Pyadomd
 
+# powerbi://api.powerbi.com/v1.0/myorg/*MSX%20Leader%20Insights
 conn_str = 'Provider=MSOLAP;Data Source=MSXIConsumptionAzBz;Catalog=MXSIAnalyst-Consumption;'
 # query = """EVALUATE Product"""
 # query = """EVALUATE TPAccountFact"""

@@ -255,7 +255,7 @@ def main():
             
         # Run the agent
         run = project_client.agents.create_and_process_run(thread_id=thread.id, assistant_id=agent.id)
-        print(f"Run finished with status: {run.status}")
+        print(f"Run Manufacturing agent finished with status: {run.status}")
         
         if run.status == "failed":
             # Check if you got "Rate limit is exceeded.", then you want to get more quota
@@ -281,7 +281,7 @@ def main():
         # https://github.com/Azure/azure-sdk-for-python/blob/azure-ai-projects_1.0.0b5/sdk/ai/azure-ai-projects/samples/agents/user_functions.py
 
         user_functions: Set[Callable[..., Any]] = {
-            send_email,
+            # send_email,
             evalmetrics,
         }
         functions = FunctionTool(user_functions)
@@ -342,7 +342,10 @@ def main():
                     )
 
             print(f"Current run status: {run.status}")
-        print(f"Run completed with status: {run.status}")
+        print(f"Run RAI Agent completed with status: {run.status}")
+
+        # now runing the evaluation manually
+        evalmetrics("evaluation")
 
 
 if __name__ == "__main__":
