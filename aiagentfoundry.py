@@ -280,8 +280,8 @@ def main():
 
         # https://github.com/Azure/azure-sdk-for-python/blob/azure-ai-projects_1.0.0b5/sdk/ai/azure-ai-projects/samples/agents/user_functions.py
 
+        print(f"Here is the Start of Responsible AI Agent")
         user_functions: Set[Callable[..., Any]] = {
-            # send_email,
             evalmetrics,
         }
         functions = FunctionTool(user_functions)
@@ -291,7 +291,7 @@ def main():
         agent = project_client.agents.create_agent(
             model="gpt-4o",
             name="evaluator",
-            instructions="You are a helpful assistant",
+            instructions="You are a Responsible AI assistant. Run the toolset to evaluate the output.",
             toolset=toolset,
         )
         print(f"Created agent, ID: {agent.id}")
@@ -341,11 +341,11 @@ def main():
                         thread_id=thread.id, run_id=run.id, tool_outputs=tool_outputs
                     )
 
-            print(f"Current run status: {run.status}")
+            print(f"Current RAI Agent run status: {run.status}")
         print(f"Run RAI Agent completed with status: {run.status}")
 
         # now runing the evaluation manually
-        evalmetrics("evaluation")
+        # evalmetrics("evaluation")
 
 
 if __name__ == "__main__":
