@@ -96,8 +96,9 @@ def bing_search(query: str):
     response = requests.get(endpoint, headers=headers, params=params)
     return [result["snippet"] for result in response.json().get("webPages", {}).get("value", [])]
 
-def evalmetrics():
+def evalmetrics(query: str) -> str:
     
+    returntxt = ""
     # Load .env file
     # load_dotenv()
     #citationtxt = extractrfpresults("Provide summary of Resources for Railway projects with 200 words?")
@@ -150,9 +151,17 @@ def evalmetrics():
     gleu_evaluator = GleuScoreEvaluator()
     meteor_evaluator = MeteorScoreEvaluator(alpha=0.8)
     rouge_evaluator = RougeScoreEvaluator(rouge_type=RougeType.ROUGE_4)
+    indirect_attack_eval = IndirectAttackEvaluator(azure_ai_project=azure_ai_project_dict, credential=credential)
+    protected_material_eval = ProtectedMaterialEvaluator(azure_ai_project=azure_ai_project_dict, credential=credential)
+    hate_unfairness_eval = HateUnfairnessEvaluator(azure_ai_project=azure_ai_project_dict, credential=credential)
+    # answer_length_evaluator = AnswerLengthEvaluator()
+
+    # answer_length = answer_length_evaluator(answer="What is the speed of light?")
+
+    # print(answer_length)
 
     results = evaluate(
-        evaluation_name="rfpevaluation",
+        evaluation_name="mfgcomplevaluation",
         data="datarfp.jsonl",
         target=extractmfgresults,
         #evaluators={
@@ -173,6 +182,10 @@ def evalmetrics():
             "gleu": gleu_evaluator,
             "meteor": meteor_evaluator,
             "rouge": rouge_evaluator,
+            "indirect_attack": indirect_attack_eval,
+            "protected_material": protected_material_eval,
+            "hate_unfairness": hate_unfairness_eval,
+            # "answer_length": answer_length_evaluator,
         },        
         evaluator_config={
             "content_safety": {"query": "${data.query}", "response": "${target.response}"},
@@ -190,6 +203,10 @@ def evalmetrics():
             "gleu": {"response": "${target.response}", "ground_truth": "${data.ground_truth}"},
             "meteor": {"response": "${target.response}", "ground_truth": "${data.ground_truth}"},
             "rouge": {"response": "${target.response}", "ground_truth": "${data.ground_truth}"},
+            "indirect_attack": {"query": "${data.query}", "response": "${target.response}"},
+            "protected_material": {"query": "${data.query}", "response": "${target.response}"},
+            "hate_unfairness": {"query": "${data.query}", "response": "${target.response}"},
+            # "answer_length": {"answer": "${target.response}"},
         },
         azure_ai_project=azure_ai_project,
         output_path="./rsoutputmetrics.json",
@@ -197,6 +214,9 @@ def evalmetrics():
     # pprint(results)
     # parse_json(results)
     print("Done")
+    returntxt = "Completed Evaluation"
+    # return returntxt
+
 
 def classify_query(user_query: str) -> str:
     response = client.chat.completions.create(

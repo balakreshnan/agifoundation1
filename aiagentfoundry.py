@@ -10,7 +10,7 @@ from opentelemetry import trace
 from azure.monitor.opentelemetry import configure_azure_monitor
 from pprint import pprint
 from azure.ai.evaluation import evaluate, AzureAIProject, AzureOpenAIModelConfiguration, F1ScoreEvaluator
-from azure.ai.evaluation import ProtectedMaterialEvaluator, IndirectAttackEvaluator
+from azure.ai.evaluation import ProtectedMaterialEvaluator, IndirectAttackEvaluator, RetrievalEvaluator
 from azure.ai.evaluation.simulator import AdversarialSimulator, AdversarialScenario, IndirectAttackSimulator
 from azure.identity import DefaultAzureCredential
 from azure.ai.evaluation import RelevanceEvaluator
@@ -76,6 +76,13 @@ def parse_json(data):
         print(f"Relevance: {relevance}")
         print("-" * 50)
 
+class AnswerLengthEvaluator:
+    def __init__(self):
+        pass
+    # A class is made a callable my implementing the special method __call__
+    def __call__(self, *, answer: str, **kwargs):
+        return {"answer_length": len(answer)}
+    
 def evalmetrics(query: str) -> str:
     
     returntxt = ""
@@ -131,9 +138,17 @@ def evalmetrics(query: str) -> str:
     gleu_evaluator = GleuScoreEvaluator()
     meteor_evaluator = MeteorScoreEvaluator(alpha=0.8)
     rouge_evaluator = RougeScoreEvaluator(rouge_type=RougeType.ROUGE_4)
+    indirect_attack_eval = IndirectAttackEvaluator(azure_ai_project=azure_ai_project_dict, credential=credential)
+    protected_material_eval = ProtectedMaterialEvaluator(azure_ai_project=azure_ai_project_dict, credential=credential)
+    hate_unfairness_eval = HateUnfairnessEvaluator(azure_ai_project=azure_ai_project_dict, credential=credential)
+    answer_length_evaluator = AnswerLengthEvaluator()
+
+    answer_length = answer_length_evaluator(answer="What is the speed of light?")
+
+    print(answer_length)
 
     results = evaluate(
-        evaluation_name="rfpevaluation",
+        evaluation_name="mfgcomplevaluation",
         data="datarfp.jsonl",
         target=extractmfgresults,
         #evaluators={
@@ -154,6 +169,10 @@ def evalmetrics(query: str) -> str:
             "gleu": gleu_evaluator,
             "meteor": meteor_evaluator,
             "rouge": rouge_evaluator,
+            "indirect_attack": indirect_attack_eval,
+            "protected_material": protected_material_eval,
+            "hate_unfairness": hate_unfairness_eval,
+            # "answer_length": answer_length_evaluator,
         },        
         evaluator_config={
             "content_safety": {"query": "${data.query}", "response": "${target.response}"},
@@ -171,6 +190,10 @@ def evalmetrics(query: str) -> str:
             "gleu": {"response": "${target.response}", "ground_truth": "${data.ground_truth}"},
             "meteor": {"response": "${target.response}", "ground_truth": "${data.ground_truth}"},
             "rouge": {"response": "${target.response}", "ground_truth": "${data.ground_truth}"},
+            "indirect_attack": {"query": "${data.query}", "response": "${target.response}"},
+            "protected_material": {"query": "${data.query}", "response": "${target.response}"},
+            "hate_unfairness": {"query": "${data.query}", "response": "${target.response}"},
+            # "answer_length": {"answer": "${target.response}"},
         },
         azure_ai_project=azure_ai_project,
         output_path="./rsoutputmetrics.json",
