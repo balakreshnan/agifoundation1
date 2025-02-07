@@ -72,6 +72,7 @@ async def agent_process(query):
 
         After all tasks are complete, summarize the findings and end with "TERMINATE".
         Extract Title content from the document. Show the Title, url as citations which is provided as url: as [url1] [url2].
+        When done, say TERMINATE.
         """,
     )
 

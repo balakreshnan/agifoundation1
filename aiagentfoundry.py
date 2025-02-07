@@ -257,7 +257,7 @@ def main():
 
         agent = project_client.agents.create_agent(
             model="gpt-4o",
-            name="my-assistant",
+            name="MFG-Compliance-Agent",
             instructions="You are a helpful assistant",
             tools=ai_search.definitions,
             tool_resources = ai_search.resources,
@@ -313,7 +313,7 @@ def main():
 
         agent = project_client.agents.create_agent(
             model="gpt-4o",
-            name="evaluator",
+            name="ResponsibileAI-Agent",
             instructions="You are a Responsible AI assistant. Run the toolset to evaluate the output.",
             toolset=toolset,
         )
