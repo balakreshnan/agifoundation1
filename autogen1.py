@@ -94,6 +94,29 @@ if __name__ == "__main__":
                                                      seed=42,
                                                      max_tokens=4096),
         tools=[pdf_reader_tool],  # Add the tool to the agent's list of tools
+        handoffs=["val_agent"],  # No handoffs for this agent
+    )
+
+    val_agent = AssistantAgent(
+        name="val_agent",
+        model_client=model_client,
+        handoffs=["quality_agent"],
+        system_message=(
+            "You are the Content Reviewer AI. Validate the output."
+        ),
+    )
+    # Quality Agent: updates user stories based on progress.
+    quality_agent = AssistantAgent(
+        name="quality_agent",
+        model_client=model_client,
+        # It can either ask adf_agent for more detail or, when ready, hand off to the next agent.
+        handoffs=["adf_agent"],
+        system_message=(
+            "You are the Quality Agent. Your task is to update and maintain user stories from the progress reports of adf_agent. "
+            "When you receive an update, evaluate whether a new user story is needed or if an existing one should be revised. "
+            "If you require additional details for clarification or validation, request adf_agent to provide them. "
+            "Once you confirm that unit tests offer 100% coverage of the current functionality, signal that the analysis is complete by handing off to 'adf_agent'."
+        ),
     )
     # Example usage of the agent calling the tool
     print("\nTesting Agent with Tool:")
@@ -102,7 +125,7 @@ if __name__ == "__main__":
     text_mention_termination = TextMentionTermination("TERMINATE")
     max_messages_termination = MaxMessageTermination(max_messages=25)
     termination = text_mention_termination | max_messages_termination
-    team = RoundRobinGroupChat([agent], termination_condition=termination, max_turns=1)
+    team = RoundRobinGroupChat([agent, val_agent], termination_condition=termination, max_turns=1)
     query = f"Read and extract text from this file: DeepSeekR1-2501.12948v1.pdf"
     # Extract the generated code
     #query = "Write a Python function that to chat last 6 months of Tesla stock price using yfinance library and print as table."
