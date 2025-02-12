@@ -21,3 +21,6 @@ autogen-ext[openai]
 autogen-ext[magentic-one,openai]
 azure-core-tracing-opentelemetry
 pyodbc
+autogen-ext
+python-docx
+pymupdf
