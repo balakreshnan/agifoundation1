@@ -175,28 +175,14 @@ if __name__ == "__main__":
     # Step 3: Define an Agent and Add the Tool
     agent = AssistantAgent(
         name="assistant_with_pdf_reader",
-        model_client=AzureOpenAIChatCompletionClient(model="gpt-4",
-                                                     azure_deployment="gpt-4o-2",
-                                                     azure_endpoint=os.getenv("AZURE_OPENAI_ENDPOINT"),
-                                                     api_key=os.getenv("AZURE_OPENAI_API_KEY"),
-                                                     api_version="2024-10-21",
-                                                     temperature=0.0,
-                                                     seed=42,
-                                                     max_tokens=4096),
+        model_client=model_client,
         tools=[pdf_reader_tool],  # Add the tool to the agent's list of tools
         handoffs=["file_agent"],  # No handoffs for this agent
     )
 
     file_agent = AssistantAgent(
         name="file_agent",
-        model_client=AzureOpenAIChatCompletionClient(model="gpt-4",
-                                                     azure_deployment="gpt-4o-2",
-                                                     azure_endpoint=os.getenv("AZURE_OPENAI_ENDPOINT"),
-                                                     api_key=os.getenv("AZURE_OPENAI_API_KEY"),
-                                                     api_version="2024-10-21",
-                                                     temperature=0.0,
-                                                     seed=42,
-                                                     max_tokens=4096),
+        model_client=model_client,
         tools=[save_files_to_json],  # Add the tool to the agent's list of tools
         handoffs=["display_agent"],  # No handoffs for this agent
         system_message=f"""Please scan the current folder and create a list of all files available. Save this list of files to a JSON file named file_list.json. 
@@ -205,14 +191,7 @@ if __name__ == "__main__":
 
     display_agent = AssistantAgent(
         name="display_agent",
-        model_client=AzureOpenAIChatCompletionClient(model="gpt-4",
-                                                     azure_deployment="gpt-4o-2",
-                                                     azure_endpoint=os.getenv("AZURE_OPENAI_ENDPOINT"),
-                                                     api_key=os.getenv("AZURE_OPENAI_API_KEY"),
-                                                     api_version="2024-10-21",
-                                                     temperature=0.0,
-                                                     seed=42,
-                                                     max_tokens=4096),
+        model_client=model_client,
         tools=[parse_and_display_json],  # Add the tool to the agent's list of tools
         handoffs=["success_agent"],  # No handoffs for this agent
         system_message=f"""Please scan the current folder and diplay the contents of file_list.json."""
@@ -221,14 +200,7 @@ if __name__ == "__main__":
     # Step 3: Define an Agent and Add the Tool
     success_agent = AssistantAgent(
         name="success_agent",
-        model_client=AzureOpenAIChatCompletionClient(model="gpt-4",
-                                                     azure_deployment="gpt-4o-2",
-                                                     azure_endpoint=os.getenv("AZURE_OPENAI_ENDPOINT"),
-                                                     api_key=os.getenv("AZURE_OPENAI_API_KEY"),
-                                                     api_version="2024-10-21",
-                                                     temperature=0.0,
-                                                     seed=42,
-                                                     max_tokens=4096),
+        model_client=model_client,
         tools=[],  # Add the tool to the agent's list of tools
         handoffs=[],  # No handoffs for this agent
         system_message=f"""Respond to user back saying all the file processing is completed. When complete respond TERMINATE"""
