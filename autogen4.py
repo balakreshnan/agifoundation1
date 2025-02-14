@@ -222,7 +222,45 @@ if __name__ == "__main__":
     response = asyncio.run(team.run(task=query))
     last_message = response.messages
     print('Code created:', last_message[-1].content)
+
+    # for message in response.messages:
+    #     print(message)
+
+    # Initialize a dictionary to store per-agent token usage
+    agent_token_usage = {}
+    total_prompt_tokens = 0
+    total_completion_tokens = 0
+
+    # Process each message
+    for message in response.messages:
+        source = message.source
+        usage = message.models_usage
+
+        if usage:
+            prompt_tokens = usage.prompt_tokens
+            completion_tokens = usage.completion_tokens
+
+            # Update per-agent token usage
+            if source not in agent_token_usage:
+                agent_token_usage[source] = {"prompt_tokens": 0, "completion_tokens": 0}
+
+            agent_token_usage[source]["prompt_tokens"] += prompt_tokens
+            agent_token_usage[source]["completion_tokens"] += completion_tokens
+
+            # Update total token counts
+            total_prompt_tokens += prompt_tokens
+            total_completion_tokens += completion_tokens
+
+    # Display per-agent token usage
+    for agent, usage in agent_token_usage.items():
+        print(f"{agent}: Prompt Tokens = {usage['prompt_tokens']}, Completion Tokens = {usage['completion_tokens']}")
+
+    # Display total token usage
+    print(f"Total Prompt Tokens: {total_prompt_tokens}")
+    print(f"Total Completion Tokens: {total_completion_tokens}")
+    print(f"Total Token Usage: {total_prompt_tokens + total_completion_tokens}")
+
     #print('Response: \n' , response)
     #parse_agent_response(response)
 
-    # print('Agent JSON:', team.dump_component().model_dump_json())
+    #print('Agent JSON:', team.dump_component().model_dump_json())
