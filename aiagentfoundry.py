@@ -96,12 +96,18 @@ def evalmetrics(query: str) -> str:
     azure_deployment = os.getenv("AZURE_OPENAI_DEPLOYMENT")
     api_version = os.getenv("AZURE_OPENAI_API_VERSION")
 
-    model_config = {
-        "azure_endpoint": azure_endpoint,
-        "api_key": api_key,
-        "azure_deployment": azure_deployment,
-        "api_version": api_version,
-    }
+    # model_config = {
+    #     "azure_endpoint": azure_endpoint,
+    #     "api_key": api_key,
+    #     "azure_deployment": azure_deployment,
+    #     "api_version": api_version,
+    # }
+    model_config = AzureOpenAIModelConfiguration(
+       azure_endpoint=azure_endpoint,
+       api_key=api_key,
+       api_version=api_version,
+       azure_deployment=azure_deployment,
+   )
 
 
     try:
@@ -244,6 +250,9 @@ def send_email(recipient: str, subject: str, body: str) -> str:
 
 
 def main():
+    
+    print(f"Application Insights Connection string: {application_insights_connection_string}")
+
     with tracer.start_as_current_span(scenario):
         conn_list = project_client.connections.list()
         conn_id = ""
@@ -369,7 +378,10 @@ def main():
 
         # now runing the evaluation manually
         # evalmetrics("evaluation")
+    print("Done")
 
 
 if __name__ == "__main__":
+    print("Starting main function")
     main()
+    print("Completed main function")
