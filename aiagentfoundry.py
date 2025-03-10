@@ -10,7 +10,7 @@ from opentelemetry import trace
 from azure.monitor.opentelemetry import configure_azure_monitor
 from pprint import pprint
 from azure.ai.evaluation import evaluate, AzureAIProject, AzureOpenAIModelConfiguration, F1ScoreEvaluator
-from azure.ai.evaluation import ProtectedMaterialEvaluator, IndirectAttackEvaluator, RetrievalEvaluator
+from azure.ai.evaluation import ProtectedMaterialEvaluator, IndirectAttackEvaluator, RetrievalEvaluator, GroundednessProEvaluator
 from azure.ai.evaluation.simulator import AdversarialSimulator, AdversarialScenario, IndirectAttackSimulator
 from azure.identity import DefaultAzureCredential
 from azure.ai.evaluation import RelevanceEvaluator
@@ -138,7 +138,10 @@ def evalmetrics(query: str) -> str:
     coherence_evaluator = CoherenceEvaluator(model_config)
     groundedness_evaluator = GroundednessEvaluator(model_config)
     fluency_evaluator = FluencyEvaluator(model_config)
-    # similarity_evaluator = SimilarityEvaluator(model_config)
+    similarity_evaluator = SimilarityEvaluator(model_config)
+    retrieval_evaluator = RetrievalEvaluator(model_config)
+    groundnesspro_evaluator = GroundednessProEvaluator(azure_ai_project=azure_ai_project_dict, credential=credential)
+
     f1_evaluator = F1ScoreEvaluator()
     bleu_evaluator = BleuScoreEvaluator()
     gleu_evaluator = GleuScoreEvaluator()
@@ -179,6 +182,9 @@ def evalmetrics(query: str) -> str:
             "protected_material": protected_material_eval,
             "hate_unfairness": hate_unfairness_eval,
             # "answer_length": answer_length_evaluator,
+            "retrieval": retrieval_evaluator,
+            "groundnesspro": groundnesspro_evaluator,
+            "similarity": similarity_evaluator,
         },        
         evaluator_config={
             "content_safety": {"query": "${data.query}", "response": "${target.response}"},
@@ -190,7 +196,6 @@ def evalmetrics(query: str) -> str:
                 "query": "${data.query}",
             },
             "fluency": {"response": "${target.response}", "context": "${data.context}", "query": "${data.query}"},
-            "similarity": {"response": "${target.response}", "context": "${data.context}", "query": "${data.query}"},
             "f1": {"response": "${target.response}", "ground_truth": "${data.ground_truth}"},
             "bleu": {"response": "${target.response}", "ground_truth": "${data.ground_truth}"},
             "gleu": {"response": "${target.response}", "ground_truth": "${data.ground_truth}"},
@@ -200,6 +205,9 @@ def evalmetrics(query: str) -> str:
             "protected_material": {"query": "${data.query}", "response": "${target.response}"},
             "hate_unfairness": {"query": "${data.query}", "response": "${target.response}"},
             # "answer_length": {"answer": "${target.response}"},
+            "retrieval": {"query": "${data.query}", "context": "${data.context}"},
+            "groundnesspro": {"query": "${data.query}", "context" : "${data.context}", "response": "${target.response}"},
+            "similarity": {"query": "${data.query}", "response": "${target.response}", "ground_truth": "${data.ground_truth}"},
         },
         azure_ai_project=azure_ai_project,
         output_path="./rsoutputmetrics.json",
