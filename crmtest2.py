@@ -69,20 +69,35 @@ print('----------------- Total Revenue data')
 # FROM [Model]
 # """
 
-query = """
-SELECT 
-    { 
-        [Measures].[Azure Consumed Revenue MoM $], 
-        [Measures].[Azure Consumed Revenue MoM %]
-    } ON COLUMNS
-FROM [Model]
-WHERE ([Account Information].[TPID].["830434"])
-"""
+
+# Define your DAZ query targeting the Azure Consumed Revenue model  
+dax_query = """  
+EVALUATE  
+TOPN(  
+    10,  
+    'Azure Consumed Revenue',  
+    'Azure Consumed Revenue'[Azure Consumed Revenue],  
+    DESC  
+) 
+""" 
+
+dax_query = """  
+EVALUATE    
+TOPN(    
+    10,    
+    SELECTCOLUMNS(  
+        'Azure Consumed Revenue'[Azure Consumed Revenue],  
+        //"ModelID", 'Model'[ModelID]  // Add other necessary columns here  
+    ),    
+    ['Azure Consumed Revenue'],    
+    DESC    
+)  
+""" 
 # WHERE ([Account Information].[TPAccountName] == 'Accenture')
 # WHERE ([Account Information].[Sales Unit].&["USA - West & Midwest"])
 
 with Pyadomd(conn_str) as conn:
-    with conn.cursor().execute(query) as cur:
+    with conn.cursor().execute(dax_query) as cur:
         print(cur.fetchall())
         # for row in cur.fetchall():
         #     print(row)
